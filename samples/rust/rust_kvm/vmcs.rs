@@ -4,7 +4,9 @@
 //! See Intel SDM, Volume 3D, Appendix B.
 use kernel::bindings;
 use kernel::prelude::*;
-#[feature(global_asm)]
+use core::arch::global_asm;
+
+// #[feature(global_asm)]
 
 /// VM-execution, VM-exit, and VM-entry control fields
 

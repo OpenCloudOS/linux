@@ -9,6 +9,9 @@ use kernel::{
     file_operations::{FileOperations, IoctlCommand, IoctlHandler},
     miscdev,
     sync::{CondVar, Mutex, Ref, RefBorrow, UniqueRef},
+    bindings,
+    pages::Pages,
+    bit,
 };
 mod guest;
 mod vmcs;

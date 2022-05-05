@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 use kernel::prelude::*;
-use kernel::task::Task;
-use kernel::{bindings, Error, Result};
+use kernel::task::{Task, MmStruct};
+use kernel::{Error, Result};
 //use kernel::rbtree::{RBTree, RBTreeNode};
 use kernel::sync::{Mutex, Ref};
 #[derive(Copy, Clone)]
@@ -14,7 +14,7 @@ pub(crate) struct RkvmMemorySlot {
 }
 
 pub(crate) struct Guest {
-    pub(crate) mm: *const bindings::mm_struct,
+    pub(crate) mm: *const MmStruct,
     pub(crate) memslot: RkvmMemorySlot,
     pub(crate) nr_slot_pages: u64,
     //pub(crate) mmu: Rkvm_mmu,

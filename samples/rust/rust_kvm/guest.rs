@@ -4,6 +4,8 @@ use kernel::task::{Task, MmStruct};
 use kernel::{Error, Result};
 //use kernel::rbtree::{RBTree, RBTreeNode};
 use kernel::sync::{Mutex, Ref};
+use kernel::bindings;
+use core::ptr;
 #[derive(Copy, Clone)]
 pub(crate) struct RkvmMemorySlot {
     //pub(crate) gfn_node: RBTreeNode,
@@ -11,6 +13,7 @@ pub(crate) struct RkvmMemorySlot {
     pub(crate) npages: u64,
     pub(crate) userspace_addr: u64,
     pub(crate) as_id: u16,
+    pub(crate) base_hva: u64,
 }
 
 pub(crate) struct Guest {
@@ -34,6 +37,7 @@ impl Guest {
                     npages: 0,
                     userspace_addr: 0,
                     as_id: 0,
+                    base_hva: 0,
                 },
                 nr_slot_pages: 0,
             }))?;
@@ -50,6 +54,11 @@ impl Guest {
         self.memslot.userspace_addr = uaddr;
         self.memslot.base_gfn = gpa >> 12u32;
         self.memslot.npages = npages;
+
+        // linear mapping from gpa->hva
+        self.memslot.base_hva = unsafe { 
+            bindings::krealloc(ptr::null(), (npages * (1 << 12u32)).try_into().unwrap(), bindings::GFP_KERNEL) as u64 };
+        
         Ok(0)
     }
 }

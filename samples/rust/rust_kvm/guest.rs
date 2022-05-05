@@ -56,9 +56,9 @@ impl Guest {
         self.memslot.npages = npages;
 
         // linear mapping from gpa->hva
-        self.memslot.base_hva = unsafe { 
+        self.memslot.base_hva = unsafe {
             bindings::krealloc(ptr::null(), (npages * (1 << 12u32)).try_into().unwrap(), bindings::GFP_KERNEL) as u64 };
-        
+
         Ok(0)
     }
 }

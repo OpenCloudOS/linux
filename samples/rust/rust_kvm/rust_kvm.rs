@@ -7,7 +7,7 @@ use kernel::prelude::*;
 use kernel::{
     file::File,
     file_operations::{FileOperations, IoctlCommand, IoctlHandler},
-    miscdev,
+    miscdev, pages::Pages, bit, bindings,
     sync::{CondVar, Mutex, Ref, RefBorrow, UniqueRef},
     bindings,
     pages::Pages,
@@ -15,6 +15,8 @@ use kernel::{
 };
 mod guest;
 mod vmcs;
+mod x86reg;
+use crate::x86reg::Cr4;
 use crate::guest::Guest;
 use crate::vmcs::*;
 module! {
@@ -161,7 +163,7 @@ fn rkvm_set_vmxon(state: &RkvmState) -> Result<u32> {
 
 const IOCTL_KVM_CREATE_VM: u32 = 0x00AE0100;
 const IOCTL_KVM_CREATE_VCPU: u32 = 0x00AE4100;
-
+static mut GUEST: Option<Ref<Mutex<Guest>>> = None;
 impl IoctlHandler for RkvmState {
     type Target<'a> = &'a RkvmState;
 

@@ -73,7 +73,7 @@ unsafe impl Sync for Task {}
 
 /// The type of process identifiers (PIDs).
 type Pid = bindings::pid_t;
-pub type MmStruct = bindings::mm_struct;
+type Mm = *const bindings::mm_struct;
 
 impl Task {
     /// Returns a task reference for the currently executing task/thread.
@@ -102,6 +102,10 @@ impl Task {
     pub fn pid(&self) -> Pid {
         // SAFETY: By the type invariant, we know that `self.ptr` is non-null and valid.
         unsafe { (*self.ptr).pid }
+    }
+    /// Returns the Mm of the given task.
+    pub fn mm(&self) -> Mm {
+        unsafe { (*self.ptr).mm }
     }
 
     /// Returns the mm of given task.

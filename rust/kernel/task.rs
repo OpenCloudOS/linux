@@ -103,14 +103,9 @@ impl Task {
         // SAFETY: By the type invariant, we know that `self.ptr` is non-null and valid.
         unsafe { (*self.ptr).pid }
     }
+    
     /// Returns the Mm of the given task.
     pub fn mm(&self) -> Mm {
-        unsafe { (*self.ptr).mm }
-    }
-
-    /// Returns the mm of given task.
-    pub fn mm(&self) -> *mut MmStruct {
-        // Refer to pid function 
         unsafe { (*self.ptr).mm }
     }
 

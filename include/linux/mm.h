@@ -1826,6 +1826,11 @@ struct page *vm_normal_page_pmd(struct vm_area_struct *vma, unsigned long addr,
 
 void zap_vma_ptes(struct vm_area_struct *vma, unsigned long address,
 		  unsigned long size);
+
+unsigned long rkvm_page_address(struct page * page);
+unsigned long rkvm_phy_address(unsigned long addr);
+unsigned long rkvm_mmap(struct file *file, struct vm_area_struct *vma);
+
 void zap_page_range(struct vm_area_struct *vma, unsigned long address,
 		    unsigned long size);
 void unmap_vmas(struct mmu_gather *tlb, struct vm_area_struct *start_vma,

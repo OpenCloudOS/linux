@@ -1713,6 +1713,48 @@ void zap_vma_ptes(struct vm_area_struct *vma, unsigned long address,
 }
 EXPORT_SYMBOL_GPL(zap_vma_ptes);
 
+
+/*rkvm */
+
+unsigned long rkvm_page_address(struct page * page)
+{
+	return lowmem_page_address(page);
+}
+
+EXPORT_SYMBOL_GPL(rkvm_page_address);
+
+unsigned long rkvm_phy_address(unsigned long addr)
+{
+	return __pa(addr);
+}
+
+EXPORT_SYMBOL_GPL(rkvm_phy_address);
+
+static vm_fault_t rkvm_fault(struct vm_fault *vmf)
+{
+	unsigned long run = vmf->vma->vm_file->private_data;
+	struct page *page;
+
+	if (vmf->pgoff == 0)
+		page = virt_to_page(run);
+	else
+		return VM_FAULT_SIGBUS;
+	get_page(page);
+	vmf->page = page;
+	return 0;
+}
+
+static const struct vm_operations_struct rkvm_vm_ops = {
+	.fault = rkvm_fault,
+};
+
+unsigned long rkvm_mmap(struct file *file, struct vm_area_struct *vma)
+{
+	vma->vm_ops = &rkvm_vm_ops;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rkvm_mmap);
+
 static pmd_t *walk_to_pmd(struct mm_struct *mm, unsigned long addr)
 {
 	pgd_t *pgd;

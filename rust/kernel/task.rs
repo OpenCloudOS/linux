@@ -73,7 +73,7 @@ unsafe impl Sync for Task {}
 
 /// The type of process identifiers (PIDs).
 type Pid = bindings::pid_t;
-type Mm = *const bindings::mm_struct;
+pub type Mm = *const bindings::mm_struct;
 
 impl Task {
     /// Returns a task reference for the currently executing task/thread.

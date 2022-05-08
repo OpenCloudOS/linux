@@ -7,7 +7,7 @@ use kernel::prelude::*;
 use kernel::{
     file::File,
     file_operations::{FileOperations, IoctlCommand, IoctlHandler},
-    miscdev, pages::Pages, bit, bindings,
+    miscdev, 
     sync::{CondVar, Mutex, Ref, RefBorrow, UniqueRef},
     bindings,
     pages::Pages,
@@ -15,8 +15,8 @@ use kernel::{
 };
 mod guest;
 mod vmcs;
-mod x86reg;
-use crate::x86reg::Cr4;
+mod x86;
+use crate::x86::x86reg::Cr4;
 use crate::guest::Guest;
 use crate::vmcs::*;
 module! {
@@ -100,7 +100,7 @@ impl KernelModule for RustMiscdev {
         /* vmxon percpu*/
 
         Ok(RustMiscdev {
-            _dev: miscdev::Registration::new_pinned(name, state)?,
+            _dev: miscdev::Registration::new_pinned(fmt!("{name}"), state)?,
         })
     }
 }
@@ -146,7 +146,7 @@ fn rkvm_set_vmxon(state: &RkvmState) -> Result<u32> {
 
     let mut vmxe: u64 = 0;
     unsafe {
-        vmxe = bindings::native2_read_cr4() & bit(x86reg::Cr4::CR4_ENABLE_VMX);
+        vmxe = bindings::native2_read_cr4() & bit(Cr4::CR4_ENABLE_VMX);
     }
     pr_info!("Rust kvm :vmxe {:}\n", vmxe);
     if vmxe > 0 {

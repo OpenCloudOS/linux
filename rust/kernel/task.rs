@@ -72,7 +72,7 @@ unsafe impl Send for Task {}
 unsafe impl Sync for Task {}
 
 /// The type of process identifiers (PIDs).
-type Pid = bindings::pid_t;
+pub type Pid = bindings::pid_t;
 pub type Mm = *const bindings::mm_struct;
 
 impl Task {

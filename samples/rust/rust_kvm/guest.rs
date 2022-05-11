@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 use kernel::prelude::*;
-use kernel::task::{Task, Mm};
+use kernel::task::{Task, Mm, Pid};
 use kernel::{Error, Result};
 //use kernel::rbtree::{RBTree, RBTreeNode};
 use kernel::sync::{Mutex, Ref};
@@ -23,6 +23,25 @@ pub(crate) struct Guest {
     pub(crate) memslot: RkvmMemorySlot,
     pub(crate) nr_slot_pages: u64,
     pub(crate) mmu: RkvmMmu,
+}
+
+pub(crate) struct RkvmVCPU {
+    rkvm: Ref<Guest>,
+
+    cpu: u32,
+    vcpu_id: u32,
+    mode: u32,
+    requests: u64,
+
+    // struct mutex mutex;
+	// struct kvm_run *run;
+
+    pid: Pid,
+
+    ready: bool,
+    // arch: RkvmVCPUArch,
+    // stat: RkvmVCPUSTAT,
+
 }
 
 impl Guest {

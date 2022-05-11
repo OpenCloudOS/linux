@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0
+
 use kernel::{Error, Result};
 use kernel::linked_list::List;
 use alloc::boxed::Box;
+use crate::guest::RkvmMemorySlot;
+use kernel::sync::{Mutex, Ref};
 
 pub(crate) struct RkvmMmuPage {
     // link: List<Box<u32>>, //?
@@ -55,15 +58,34 @@ pub(crate) struct RkvmMmu {
 	// u64 pdptrs[4]; /* pae */
 }
 
-pub(crate) struct RkvmTlbRange {
-    start_gfn: u64,
-    pages: u64,
+pub(crate) struct RkvmPageFault {
+    /* arguments for kvm_mmu_do_page_fault */
+    addr: u64,  // gpa
+    error_code: u32,
+    prefetch: bool,
+
+    /* derived from error code */
+    exec: bool,
+    write: bool, 
+    present: bool,
+    rsvd: bool,
+    user: bool,
+
+    max_level: u8,
+    req_level: u8,
+    goal_level: u8,
+
+    gfn: u64,
+    
+    slot: Ref<Mutex<RkvmMemorySlot>>,
+
+    /* Outputs of kvm_faultin_pfn.  */
+	// kvm_pfn_t pfn;
+	// hva_t hva;
+	// bool map_writable;
 }
 
 impl RkvmMmu {
-    fn nul(&self) -> Result<u8> {
-        Ok(0)
-    }
 
     fn get_guest_pgd(&self) -> Result<u64> {
         Ok(0)

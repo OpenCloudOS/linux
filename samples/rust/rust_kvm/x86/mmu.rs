@@ -42,12 +42,8 @@ pub(crate) struct RkvmMmu {
     
     pub(crate) root_level: u8,
     pub(crate) tdp_root_level: u8,
-    pub(crate) ept_ad: u8,
-    pub(crate) direct_map: bool,
-    // struct kvm_mmu_root_info prev_roots[KVM_MMU_NUM_PREV_ROOTS];
-    // u8 permissions[16];
 
-    // pkru_mask: u32,
+    // struct kvm_mmu_root_info prev_roots[KVM_MMU_NUM_PREV_ROOTS];
 
     pub(crate) pae_root: Option<*const u64>,
     pub(crate) pml4_root: Option<*const u64>,

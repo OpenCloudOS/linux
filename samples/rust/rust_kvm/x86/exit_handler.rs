@@ -3,9 +3,10 @@
 use kernel::{Error, Result};
 use kernel::sync::{Mutex, Ref};
 use crate::guest::RkvmVCPU;
+use crate::vmcs::{vmcs_read32, VmcsField};
 
 pub(crate) struct RkvmExit {
-    exit_reason: u32, // union in linux kvm, basic in higher 16 bits
+    exit_reason: u16, // union in linux kvm, basic in higher 16 bits
     /*
         EXIT_REASON_EXCEPTION_NMI       0
         EXIT_REASON_EXTERNAL_INTERRUPT  1
@@ -72,33 +73,45 @@ pub(crate) struct RkvmExit {
 }
 
 impl RkvmExit {
-    pub(crate) fn new() -> Result<Self> {
+    pub(crate) fn new(&self, vcpu: &RkvmVCPU) -> Result<Self> {
+        
+        let mut reason = self.vmx_get_exit_reason(vcpu)?;
+
         //vmx->exit_reason;
-        let h = Self {
-            exit_reason: 0,
+        let mut h = Self {
+            exit_reason: reason,
         };
 
         Ok(h)
     }
+    
+    fn vmx_get_exit_reason(&self, vcpu: &RkvmVCPU) -> Result<u16> {
+        /* get exit reason from vmx field */
+        // TODO
 
-    pub(crate) fn handler(&self, vcpu: &RkvmVCPU) -> Result<u8>{
-        let mut r: u8 = 0;
+        let mut reason = vmcs_read32(VmcsField::VM_EXIT_REASON) as u16;
+
+        Ok(reason)
+    }
+
+    pub(crate) fn handler(&self, vcpu: &RkvmVCPU) -> Result<()>{
 
         match self.exit_reason {
-            48 => r = self.ept_violation_handler(vcpu)?,
+            48 => self.ept_violation_handler(vcpu)?,
             _ => self.unexpected_vmexit(),
         }
 
-        Ok(r)
+        Ok(())
     }
 
-    fn ept_violation_handler(&self, vcpu: &RkvmVCPU) -> Result<u8> {
-        let r: u8 = 0;
-
-        Ok(r)
+    fn ept_violation_handler(&self, vcpu: &RkvmVCPU) -> Result<()> {
+        
+        Ok(())
     }
 
     fn unexpected_vmexit(&self) {
         panic!("Not a valid vmexit exit source");
     }
+
+
 }

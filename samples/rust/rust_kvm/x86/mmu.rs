@@ -11,27 +11,13 @@ pub(crate) struct RkvmMmuPage {
     // struct hlist_node hash_link;
 
     tdp_mmu_page: bool,
-    unsync: bool,
     mmu_valid_gen: u8,
-    // bool lpage_disallowed;
-
-    // union kvm_mmu_page_role role;
-    mmu_page_role: u64,
 
     gfn: u64,
     spt: *const u64,
     gfns: *const u64,
 
-    // union {
-	// 	int root_count;
-	// 	refcount_t tdp_mmu_root_count;
-	// };
-    // unsigned int unsync_children;
-    // DECLARE_BITMAP(unsync_child_bitmap, 512);
-
-	// struct list_head lpage_disallowed_link;
-    // atomic_t write_flooding_count;
-    // struct rcu_head rcu_head;
+    root_count: Mutex<u32> // may be deleted when use Ref<RkvmMmupage>  
 }
 
 pub(crate) struct RkvmMmu {
@@ -40,17 +26,12 @@ pub(crate) struct RkvmMmu {
     
     pub(crate) mmu_role: u64,
     
-    pub(crate) root_level: u8,
     pub(crate) tdp_root_level: u8,
-
-    // struct kvm_mmu_root_info prev_roots[KVM_MMU_NUM_PREV_ROOTS];
 
     pub(crate) pae_root: Option<*const u64>,
     pub(crate) pml4_root: Option<*const u64>,
     pub(crate) pml5_root: Option<*const u64>,
 
-    // struct rsvd_bits_validate shadow_zero_check;
-	// struct rsvd_bits_validate guest_rsvd_check;
 	// u64 pdptrs[4]; /* pae */
 }
 

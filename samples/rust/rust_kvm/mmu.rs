@@ -149,8 +149,6 @@ impl RkvmMmu {
             Ok(flags) => flags,
             Err(err) => return Err(err),
         };
-        pr_info!("ad_disabled = {}, ecex_only = {}", flags.ad_disabled, flags.has_exec_only);
-        
 
         let mut mmu = UniqueRef::try_new(Self {
             root_hpa: hpa, //physical addr

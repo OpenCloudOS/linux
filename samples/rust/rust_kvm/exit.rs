@@ -323,7 +323,6 @@ pub(crate) fn handle_io(exit_info: &ExitInfo, vcpu: &VcpuWrapper) -> Result<u64>
 }
 
 pub(crate) fn handle_ept_misconfig(exit_info: &ExitInfo, vcpu: &VcpuWrapper) -> Result<u64> {
-    pr_info!("Enter handle EPT misconfiguration\n");
     let mut error_code: u64 = 0;
     let gpa = vmcs_read64(VmcsField::GUEST_PHYSICAL_ADDRESS);
     exit_info.next_rip();
@@ -429,6 +428,7 @@ fn make_spte(fault: &RkvmPageFault, flags: &EptMasks) -> u64 {
     if flags.ad_disabled {
         spte |= SpteFlag::SPTE_TDP_AD_DISABLED_MASK as u64;
     }
+
     // TODO: case with pte_access and marco ACC_XXXX_MASK
     // TODO: works related to mtrr & mmio
     spte |= pa | flags.ept_present_mask | flags.ept_exec_mask | flags.ept_user_mask;
@@ -444,8 +444,7 @@ fn make_spte(fault: &RkvmPageFault, flags: &EptMasks) -> u64 {
     if !flags.ad_disabled {
         spte |= flags.ept_dirty_mask;
     }
-    //TODO: permission settings in pte
-    // spte |= pa | 0x77 | 0x600000000000000;
+
     spte
 }
 
@@ -463,8 +462,6 @@ fn make_noleaf_spte(pt: u64, flags: &EptMasks) -> u64 {
         spte |= flags.ept_accessed_mask;
     }
     
-    //TODO: permission settings in pte
-    // spte |= pa | 0x7u64;
     spte
 }
 fn rkvm_tdp_map(vcpu: &VcpuWrapper, fault: &mut RkvmPageFault) -> Result {
@@ -532,7 +529,6 @@ fn rkvm_tdp_map(vcpu: &VcpuWrapper, fault: &mut RkvmPageFault) -> Result {
 }
 
 pub(crate) fn handle_ept_violation(exit_info: &ExitInfo, vcpu: &VcpuWrapper) -> Result<u64> {
-    pr_info!("Enter handle EPT violation\n");
     let mut error_code: u64 = 0;
     let gpa = vmcs_read64(VmcsField::GUEST_PHYSICAL_ADDRESS);
     if (exit_info.exit_qualification & EptViolationMask::EPT_VIOLATION_ACC_READ as u64) != 0 {

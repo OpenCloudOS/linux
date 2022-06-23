@@ -420,11 +420,32 @@ fn make_level_gfn(gfn: u64, level: u64) -> Result<u64> {
     Ok(level_gfn)
 }
 
-fn make_spte(pfn: u64) -> u64 {
+fn make_spte(fault: &RkvmPageFault, flags: &EptMasks) -> u64 {
+    
+    let pfn = fault.pfn;
     let mut spte: u64 = 1u64 << 11; //SPTE_MMU_PRESENT_MASK
     let pa = pfn << bindings::PAGE_SHIFT;
+    
+    if flags.ad_disabled {
+        spte |= SpteFlag::SPTE_TDP_AD_DISABLED_MASK as u64;
+    }
+    // TODO: case with pte_access and marco ACC_XXXX_MASK
+    // TODO: works related to mtrr & mmio
+    spte |= pa | flags.ept_present_mask | flags.ept_exec_mask | flags.ept_user_mask;
+
+    if !fault.prefetch && !flags.ad_disabled {
+        spte |= flags.ept_accessed_mask;
+    }
+
+    //if host_writable
+    spte |= SpteFlag::EPT_SPTE_HOST_WRITABLE as u64 | SpteFlag::EPT_SPTE_MMU_WRITABLE as u64
+             | VmxEptFlag::VMX_EPT_WRITABLE_MASK as u64;
+
+    if !flags.ad_disabled {
+        spte |= flags.ept_dirty_mask;
+    }
     //TODO: permission settings in pte
-    spte |= pa | 0x77 | 0x600000000000000;
+    // spte |= pa | 0x77 | 0x600000000000000;
     spte
 }
 
@@ -497,8 +518,13 @@ fn rkvm_tdp_map(vcpu: &VcpuWrapper, fault: &mut RkvmPageFault) -> Result {
 
     if level == fault.goal_level {
         //make pte
-        spte = make_spte(fault.pfn);
-
+        spte = make_spte(fault, &flags);
+        pr_info!(
+            "rkvm_tdp_map level={:?}, gfn={:?}, spte={:?} \n",
+            level,
+            level_gfn,
+            spte
+        );
         //set pte
         rkvm_write_spte(pre_mmu_page, spte, level_gfn, level);
     }

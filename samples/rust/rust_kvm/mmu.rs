@@ -11,6 +11,7 @@ use kernel::{
 
 use crate::vmcs::*;
 use crate::x86reg::*;
+use crate::{rkvm_debug, DEBUG_ON};
 
 #[repr(u64)]
 #[derive(Debug)]
@@ -137,14 +138,14 @@ impl RkvmMmu {
             None => return Err(Error::ENOMEM),
         };
 
-        pr_debug!("RkvmMmu hpa(va) = {:x} \n", hpa);
+        rkvm_debug!("RkvmMmu hpa(va) = {:x} \n", hpa);
 
         let ptr = hpa as *mut c_void;
         unsafe {
             bindings::memset(ptr, 0, PAGE_SIZE as u64);
         }
         let hpa = unsafe { bindings::rkvm_phy_address(hpa) };
-        pr_info!("RkvmMmu hpa(phy) = {:x}--root_hpa \n", hpa);
+        rkvm_debug!("RkvmMmu hpa(phy) = {:x}--root_hpa \n", hpa);
 
         let flags = EptMasks::new();
         let flags = match flags {
@@ -152,7 +153,7 @@ impl RkvmMmu {
             Err(err) => return Err(err),
         };
 
-        pr_debug!("ad_disabled = {}, ecex_only = {}", flags.ad_disabled, flags.has_exec_only);
+        rkvm_debug!("ad_disabled = {}, ecex_only = {}", flags.ad_disabled, flags.has_exec_only);
 
         let mut mmu = UniqueRef::try_new(Self {
             root_hpa: hpa, //physical addr
@@ -191,12 +192,12 @@ impl RkvmMmu {
 
     pub(crate) fn init_mmu_root(&mut self) -> Result {
         //TODO: pgd setting
-        pr_debug!(" ### init_mmu_root \n");
+        rkvm_debug!(" ### init_mmu_root \n");
         
         let eptp = self.make_eptp();
         vmcs_write64(VmcsField::EPT_POINTER, eptp);
 
-        pr_debug!("hpa= {:x}, eptp = {:x} \n", self.root_hpa, eptp);
+        rkvm_debug!("hpa= {:x}, eptp = {:x} \n", self.root_hpa, eptp);
         
         unsafe { bindings::rkvm_invept(1, eptp, 0) };
 

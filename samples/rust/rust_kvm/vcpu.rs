@@ -4,6 +4,7 @@ use crate::exit::*;
 use crate::mmu::*;
 use crate::vmcs::*;
 use crate::vmstat::*;
+use crate::{rkvm_debug, DEBUG_ON};
 use core::arch::global_asm;
 use core::pin::Pin;
 use kernel::bindings;
@@ -211,7 +212,7 @@ pub(crate) fn alloc_vmcs(revision_id: u32) -> Result<RkvmPage<RkvmVmcs>> {
         *ptr = revision_id;
     }
 
-    pr_debug!("Rust kvm: vmcs={:x},revision={:?} \n", vmcs.va, *ptr,);
+    rkvm_debug!("Rust kvm: vmcs={:x},revision={:?} \n", vmcs.va, *ptr,);
     
     Ok(vmcs)
 }
@@ -220,7 +221,7 @@ fn vmcs_load(va: u64) {
     unsafe {
         let phy = bindings::rkvm_phy_address(va);
         if phy == 0 {
-            pr_debug!(" vmcs_load failed \n");
+            rkvm_debug!(" vmcs_load failed \n");
         }
         bindings::rkvm_vmcs_load(phy);
     }
@@ -305,7 +306,7 @@ impl VcpuWrapper {
             ExitReason::EPT_MISCONFIGURATION => {
                 let vector_info = vmcs_read32(VmcsField::IDT_VECTORING_INFO);
                 if vector_info & 0x80000000 != 0 {
-                    pr_info!(" EPT_MISCONFIGURATION, vector_info: {:x} \n", vector_info);
+                    rkvm_debug!(" EPT_MISCONFIGURATION, vector_info: {:x} \n", vector_info);
                     let vcpuinner = self.vcpuinner.lock();
                     let ptr = (vcpuinner.run.va + 8) as *mut u64;
                     unsafe {
@@ -318,12 +319,12 @@ impl VcpuWrapper {
             ExitReason::EXTERNAL_INTERRUPT => {
                 let intr_info = vmcs_read32(VmcsField::IDT_VECTORING_INFO);
 
-                pr_debug!(" interrupt: {:x} \n", intr_info);
+                rkvm_debug!(" interrupt: {:x} \n", intr_info);
 
                 return Ok(1);
             }
             _ => {
-                pr_info!(" ## exit_reason = {:?} \n", exit_info.exit_reason);
+                rkvm_debug!(" ## exit_reason = {:?} \n", exit_info.exit_reason);
                 let vcpuinner = self.vcpuinner.lock();
                 let ptr = (vcpuinner.run.va + 8) as *mut u64;
                 unsafe {
@@ -340,7 +341,7 @@ impl VcpuWrapper {
             vmcs_load(vcpuinner.vmcs.va);
             let rip = vmcs_read64(VmcsField::GUEST_RIP);
 
-            pr_debug!(
+            rkvm_debug!(
                 " vcpu_run state guest rip = {:x}, read guest rip = {:x} \n",
                 vcpuinner.guest_state.rip,
                 rip,
@@ -358,7 +359,7 @@ impl VcpuWrapper {
 
                 let launched = vcpuinner.guest_state.launched;
 
-                pr_debug!(
+                rkvm_debug!(
                     " vmentry: launched = {:?}, guest_rip={:x} \n",
                     launched,
                     vmcs_read64(VmcsField::GUEST_RIP)
@@ -369,7 +370,7 @@ impl VcpuWrapper {
                 }
             }
 
-            pr_debug!(
+            rkvm_debug!(
                 " vmexit: guest_rip={:x} \n",
                 vmcs_read64(VmcsField::GUEST_RIP)
             );
@@ -389,7 +390,7 @@ impl VcpuWrapper {
                 let ret = vmcs_read32(VmcsField::VM_INSTRUCTION_ERROR);
                 let rflags = unsafe { bindings::rkvm_rflags_read() };
 
-                pr_debug!(
+                rkvm_debug!(
                     "run loop after _vmx_vcpu_run, rflags={:x},ret={:x} \n",
                     rflags,
                     ret
@@ -408,7 +409,7 @@ impl VcpuWrapper {
             //match vmexit_handler
             let ret = self.vcpu_exit_handler();
 
-            pr_debug!("ret={:?}, after vcpu_exit_handler \n", ret);
+            rkvm_debug!("ret={:?}, after vcpu_exit_handler \n", ret);
 
             // TODO: according to ret, update run
             match ret {
@@ -419,7 +420,7 @@ impl VcpuWrapper {
                 }
                 Err(_err) => {
                     let mut vcpuinner = self.vcpuinner.lock();
-                    pr_info!("  vcpu run failed \n");
+                    rkvm_debug!("  vcpu run failed \n");
                     dump_vmcs();
                     unsafe {
                         (*(vcpuinner.run.ptr)).exit_reason = (RkvmUserExitReason::RKVM_EXIT_FAIL_ENTRY) as u32;
@@ -452,7 +453,7 @@ impl VcpuWrapper {
         vcpuinner.guest_state.rip = regs.rip;
         vmcs_write64(VmcsField::GUEST_RIP, regs.rip);
 
-        pr_debug!(
+        rkvm_debug!(
             " set_regs guest_rip = {:x}, state_rax = {:x}\n",
             regs.rip,
             vcpuinner.guest_state.rax,
@@ -504,7 +505,7 @@ impl VcpuWrapper {
 
 impl Drop for VcpuWrapper {
     fn drop(&mut self) {
-        pr_debug!(" vcpu droped \n");
+        rkvm_debug!(" vcpu droped \n");
     }
 }
 

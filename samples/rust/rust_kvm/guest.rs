@@ -4,6 +4,7 @@ use kernel::task::Task;
 use kernel::{bindings, mutex_init, Error, Result};
 //use kernel::rbtree::{RBTree, RBTreeNode};
 use kernel::sync::{Mutex, Ref, UniqueRef};
+use crate::{rkvm_debug, DEBUG_ON};
 
 #[derive(Copy, Clone)]
 #[allow(dead_code)]
@@ -67,7 +68,7 @@ impl GuestWrapper {
         guestinner.memslot.base_gfn = gpa >> 12;
         guestinner.memslot.npages = npages;
 
-        pr_debug!(
+        rkvm_debug!(
             " add_memory_region user={:x}, gpa = {:x}, npages={:x} \n",
             uaddr,
             gpa,
@@ -80,6 +81,6 @@ impl GuestWrapper {
 
 impl Drop for GuestWrapper {
     fn drop(&mut self) {
-        pr_debug!(" guest droped \n");
+        rkvm_debug!(" guest droped \n");
     }
 }

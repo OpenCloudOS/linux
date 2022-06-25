@@ -58,7 +58,7 @@ struct RkvmState {
 
 impl RkvmState {
     fn try_new() -> Result<Ref<Self>> {
-        pr_debug!("RkvmState try_new \n");
+        rkvm_debug!("RkvmState try_new \n");
 
         let mut vmcsconf = VmcsConfig::new()?;
         let _ret = vmcsconf.setup_config()?;
@@ -93,13 +93,13 @@ impl FileOperations for KVM {
     kernel::declare_file_operations!(ioctl, mmap);
 
     fn open(shared: &Ref<RkvmState>, _file: &File) -> Result<Self::Wrapper> {
-        pr_debug!("KVM open \n");
+        rkvm_debug!("KVM open \n");
 
         Ok(shared.clone())
     }
 
     fn mmap(_shared: RefBorrow<'_, RkvmState>, _file: &File, _vma: &mut Area) -> Result {
-        pr_debug!("KVM mmap \n");
+        rkvm_debug!("KVM mmap \n");
         
         unsafe {
             bindings::rkvm_mmap(_file.ptr, _vma.vma);
@@ -112,6 +112,18 @@ impl FileOperations for KVM {
     }
 }
 
+static mut DEBUG_ON: bool = false;
+#[macro_export]
+macro_rules! rkvm_debug (
+    ($($arg:tt)*) => (
+        unsafe {
+            if DEBUG_ON {
+                kernel::print_macro!(kernel::print::format_strings::DEBUG, false, $($arg)*)
+            }
+        }
+    )
+);
+
 struct RustMiscdev {
     _dev: Pin<Box<miscdev::Registration<KVM>>>,
 }
@@ -121,8 +133,8 @@ impl KernelModule for RustMiscdev {
         pr_info!("Rust kvm module (init) name={:?} \n", name);
         {
             let lock = module.kernel_param_lock();
-            pr_info!("Parameters:\n");
-            pr_info!("  debug:    {}\n", debug.read());
+            unsafe {  DEBUG_ON = *debug.read();  }
+            rkvm_debug!("DEBUG ON :  {}\n", DEBUG_ON);
         }
         let state = RkvmState::try_new()?;
         Ok(RustMiscdev {
@@ -149,17 +161,17 @@ fn rkvm_set_vmxon(state: &RkvmState) -> Result<u32> {
 
     let vmxe = unsafe { bindings::native2_read_cr4() & bit(x86reg::Cr4::CR4_ENABLE_VMX) };
 
-    pr_debug!("Rust kvm :vmxe {:}\n", vmxe);
+    rkvm_debug!("Rust kvm :vmxe {:}\n", vmxe);
 
     if vmxe > 0 {
 
-        pr_debug!("Rust kvm: vmx has been enabled\n");
+        rkvm_debug!("Rust kvm: vmx has been enabled\n");
         
         return Err(Error::ENOENT);
     }
     unsafe {
         let pa = bindings::rkvm_phy_address(vmcs.va);
-        pr_debug!(" pa = {:x}\n", pa);
+        rkvm_debug!(" pa = {:x}\n", pa);
 
         bindings::rkvm_vmxon(pa);
         VMXON_VMCS = Some(vmcs);
@@ -210,7 +222,7 @@ impl IoctlHandler for RkvmState {
                     GUEST = Some(guest);
                 }
                 
-                pr_debug!("Rust kvm: IOCTL_KVM_CREATE_VM\n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_CREATE_VM\n");
 
                 Ok(0)
             }
@@ -222,7 +234,7 @@ impl IoctlHandler for RkvmState {
                     }
                 };
 
-                pr_debug!("Rust kvm: IOCTL_KVM_CREATE_VCPU \n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_CREATE_VCPU \n");
 
                 let revision_id = _shared.inner.lock().vmcsconf.revision_id;
                 let vcpu0 = VcpuWrapper::new(guest, revision_id);
@@ -238,17 +250,17 @@ impl IoctlHandler for RkvmState {
                     //use for mmap
                     (*file.ptr).private_data = va as *mut c_void;
 
-                    pr_debug!("Rust kvm: vcpu create : run = {:x} \n", va);
+                    rkvm_debug!("Rust kvm: vcpu create : run = {:x} \n", va);
 
                     VCPU = Some(vcpu0);
                 }
 
-                pr_debug!("Rust kvm: IOCTL_KVM_CREATE_VCPU finish\n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_CREATE_VCPU finish\n");
 
                 Ok(0)
             }
             IOCTL_KVM_VCPU_RUN => {
-                pr_debug!("Rust kvm: IOCTL_KVM_VCPU_RUN\n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_VCPU_RUN\n");
 
                 let vcpu = unsafe {
                     match &VCPU {
@@ -273,7 +285,7 @@ impl IoctlHandler for RkvmState {
     ) -> Result<i32> {
         match cmd {
             IOCTL_KVM_GET_REGS => {
-                pr_debug!("Rust kvm: IOCTL_KVM_GET_REGS\n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_GET_REGS\n");
 
                 let vcpu = unsafe {
                     match &VCPU {
@@ -311,7 +323,7 @@ impl IoctlHandler for RkvmState {
                 Ok(0)
             }
             IOCTL_KVM_GET_SREGS => {
-                pr_debug!("Rust kvm: IOCTL_KVM_GET_SREGS\n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_GET_SREGS\n");
 
                 let vcpu = unsafe {
                     match &VCPU {
@@ -340,7 +352,7 @@ impl IoctlHandler for RkvmState {
     ) -> Result<i32> {
         match cmd {
             IOCTL_KVM_SET_USER_MEMORY_REGION => {
-                pr_debug!("Rust kvm: IOCTL_KVM_SET_USER_MEMORY_REGION\n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_SET_USER_MEMORY_REGION\n");
                 
                 let guest = unsafe {
                     match &GUEST {
@@ -357,7 +369,7 @@ impl IoctlHandler for RkvmState {
                 };
                 let len = core::mem::size_of::<RkvmUserspaceMemoryRegion>();
                 
-                pr_debug!("Rust kvm: IOCTL_KVM_SET_USER_MEMORY_REGION len={:?}\n", len);
+                rkvm_debug!("Rust kvm: IOCTL_KVM_SET_USER_MEMORY_REGION len={:?}\n", len);
 
                 unsafe {
                     let ptr = core::slice::from_raw_parts_mut(
@@ -375,7 +387,7 @@ impl IoctlHandler for RkvmState {
                 ret
             }
             IOCTL_KVM_SET_REGS => {
-                pr_debug!("Rust kvm: IOCTL_KVM_SET_REGS \n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_SET_REGS \n");
 
                 let vcpu = unsafe {
                     match &VCPU {
@@ -412,7 +424,7 @@ impl IoctlHandler for RkvmState {
                     );
                     reader.read_raw(ptr.as_mut_ptr(), len)?;
                 }
-                pr_debug!(
+                rkvm_debug!(
                     " IOCTL_KVM_SET_REGS: rip={:x}, rax={:x} \n",
                     uaddr_.rip,
                     uaddr_.rax
@@ -423,7 +435,7 @@ impl IoctlHandler for RkvmState {
                 Ok(0)
             }
             IOCTL_KVM_SET_SREGS => {
-                pr_debug!("Rust kvm: IOCTL_KVM_SET_SREGS \n");
+                rkvm_debug!("Rust kvm: IOCTL_KVM_SET_SREGS \n");
 
                 let vcpu = unsafe {
                     match &VCPU {

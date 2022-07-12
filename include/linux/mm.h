@@ -1830,7 +1830,6 @@ void zap_vma_ptes(struct vm_area_struct *vma, unsigned long address,
 unsigned long rkvm_get_current_gdt_ro(void);
 unsigned long rkvm_get_current_tss_ro(void);
 unsigned long rkvm_page_to_pfn(struct page *page);
-unsigned long rkvm_page_address(struct page * page);
 unsigned long rkvm_phy_address(unsigned long addr);
 unsigned long rkvm_mmap(struct file *file, struct vm_area_struct *vma);
 

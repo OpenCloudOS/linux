@@ -757,7 +757,7 @@ impl VmcsConfig {
         vmcs_write16(VmcsField::HOST_GS_SELECTOR, 0); /* 22.2.4 */
         vmcs_write16(VmcsField::HOST_TR_SELECTOR, 64);
         // let fs = read_msr(X86Msr::FS_BASE);
-        let fs = unsafe { bindings::rkvm_rdfsbase() };
+        let fs = read_fsbase();
         vmcs_write64(VmcsField::HOST_FS_BASE, fs);
         // let gs = read_msr(X86Msr::GS_BASE);
         let gs = unsafe { bindings::rkvm_rdgsbase() };

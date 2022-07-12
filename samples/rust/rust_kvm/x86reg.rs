@@ -105,7 +105,6 @@ pub(crate) fn write_cr4(val: u64) {
     }
 }
 
-#[no_mangle]
 pub(crate) fn read_rflags() -> u64 {
     let flags: u64;
     unsafe {
@@ -115,4 +114,14 @@ pub(crate) fn read_rflags() -> u64 {
         );
     }
     flags
+}
+
+pub(crate) fn read_fsbase() -> u64 {
+    let fsbase: u64;
+    unsafe {
+        asm!("rdfsbase {0}",
+            out(reg) fsbase
+        );
+    }
+    return fsbase;
 }

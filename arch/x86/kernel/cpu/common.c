@@ -416,12 +416,6 @@ void rkvm_vmxoff()
 }
 EXPORT_SYMBOL(rkvm_vmxoff);
 
-unsigned long rkvm_rdfsbase(void)
-{
-	return rdfsbase();
-}
-EXPORT_SYMBOL(rkvm_rdfsbase);
-
 unsigned long rkvm_rdgsbase(void)
 {
 	int cpu;

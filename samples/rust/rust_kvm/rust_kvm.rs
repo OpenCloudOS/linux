@@ -2,12 +2,13 @@
 
 //! Rust KVM for VMX
 #[allow(missing_docs)]
+use core::cfg;
 use core::arch::asm;
 use kernel::c_types::c_void;
 use kernel::mm::virt::Area;
 use kernel::prelude::*;
 use kernel::{
-    bindings, bit,
+    bindings, bit, Error,
     file::File,
     file_operations::{FileOperations, IoctlCommand, IoctlHandler},
     io_buffer::{IoBufferReader, IoBufferWriter},
@@ -131,6 +132,11 @@ struct RustMiscdev {
 
 impl KernelModule for RustMiscdev {
     fn init(name: &'static CStr, module: &'static ThisModule) -> Result<Self> {
+        if cfg!(CONFIG_X86_32) {
+            pr_err!("RustKvm doesn't support 32-bit machine\n");
+            return Err(Error::ENOTSUPP);
+        }
+        
         pr_info!("Rust kvm module (init) name={:?} \n", name);
         {
             let _lock = module.kernel_param_lock();

@@ -82,7 +82,6 @@ void rkvm_vmxoff(void);
 void rkvm_wrgsbase(unsigned long gs);
 void rkvm_wrfsbase(unsigned long fs);
 unsigned long rkvm_rdgsbase(void);
-unsigned long rkvm_rdfsbase(void);
 
 unsigned short rkvm_read_ldt(void);
 void rkvm_load_ldt(unsigned short sel);

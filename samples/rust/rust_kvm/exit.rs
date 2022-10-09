@@ -324,14 +324,6 @@ pub(crate) fn handle_io(exit_info: &ExitInfo, vcpu: &VcpuWrapper) -> Result<u64>
     Ok(0)
 }
 
-pub(crate) fn handle_ept_misconfig(exit_info: &ExitInfo, vcpu: &VcpuWrapper) -> Result<u64> {
-    rkvm_debug!("Enter handle EPT misconfiguration\n");
-    // let mut error_code: u64 = 0;
-    let _gpa = vmcs_read64(VmcsField::GUEST_PHYSICAL_ADDRESS);
-    exit_info.next_rip();
-    Ok(0)
-}
-
 const LEVELBITS: u64 = 9;
 macro_rules! LEVEL_SHIFT {
     ($level:expr) => {

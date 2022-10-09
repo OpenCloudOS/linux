@@ -337,7 +337,10 @@ impl VcpuWrapper {
                     }
                     return Err(Error::EINVAL);
                 }
-                return handle_ept_misconfig(&exit_info, self);
+		// The mmio spte page table method is not used, and the mmio command is emulated 
+		// in user mode, so the ept misconfig will not be triggered.
+		pr_err!(" EPT_MISCONFIGURATION is invalid, vector_info: {:x} \n", vector_info);
+		return Err(Error::EINVAL);
             }
             _ => {
                 pr_err!(" vmx exit_reason = {:?} \n", exit_info.exit_reason);

@@ -12,7 +12,7 @@ pub(crate) struct RkvmMemorySlot {
     pub(crate) base_gfn: u64,
     pub(crate) npages: u64,
     pub(crate) userspace_addr: u64,
-    pub(crate) as_id: u16,
+    pub(crate) slot_id: u16,
 }
 /*
 pub(crate) struct Rkvm_memslots {
@@ -46,7 +46,7 @@ impl GuestWrapper {
                         base_gfn: 0,
                         npages: 0,
                         userspace_addr: 0,
-                        as_id: 0,
+                        slot_id: 0,
                     },
                     nr_slot_pages: 0,
                 })
@@ -58,17 +58,19 @@ impl GuestWrapper {
         Ok(g.into())
     }
 
-    pub(crate) fn add_memory_region(&self, uaddr: u64, npages: u64, gpa: u64) -> Result<i32> {
+    pub(crate) fn add_memory_region(&self, slot: u16, uaddr: u64, npages: u64, gpa: u64) -> Result<i32> {
         if gpa & (kernel::PAGE_SIZE - 1) as u64 != 0 {
             return Err(Error::ENOMEM);
         }
         let mut guestinner = self.guestinner.lock();
+	guestinner.memslot.slot_id = slot;
         guestinner.memslot.userspace_addr = uaddr;
         guestinner.memslot.base_gfn = gpa >> 12;
         guestinner.memslot.npages = npages;
 
         rkvm_debug!(
-            " add_memory_region user={:x}, gpa = {:x}, npages={:x} \n",
+            " add_memory_region slot= {},uaddr={:x}, gpa = {:x}, npages={:x} \n",
+	    slot,
             uaddr,
             gpa,
             npages

@@ -10,8 +10,8 @@ menuconfig SAMPLES_RUST
 
 if SAMPLES_RUST
 
-config SAMPLE_RUST_KVM
-	tristate "Kvm"
+config SAMPLE_RUST_LIKEX
+	tristate "LiKeX"
 	default m
 
 config SAMPLE_RUST_MINIMAL
